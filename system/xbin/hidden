@@ -1,0 +1,249 @@
+#!/system/bin/sh
+# Terminal Magisk Mod Template
+# by veez21 @ xda-developers
+
+
+# Magisk Module ID **
+ID="hidden_settings"
+
+# Detect root
+_name=$(basename $0)
+ls /data >/dev/null 2>&1 || { echo "$ID needs to run as root!"; echo "type 'su' then '$_name'"; exit 1; }
+
+# Import util_functions.sh
+[ -f /data/adb/magisk/util_functions.sh ] && . /data/adb/magisk/util_functions.sh || { echo "util_functions.sh not detected!"; exit 1; }
+
+# Magisk Mod Directory
+MOUNTPATH="/data/adb/modules"
+[ ! -d $MOUNTPATH ] && MOUNTPATH="/sbin/.magisk/img"
+MODDIR="$MOUNTPATH/$ID"
+[ ! -d $MODDIR ] && { echo "Module not detected!"; exit 1; }
+
+# Load mod-util.sh
+. $MODDIR/mod-util.sh || exit $?
+
+# Set Log Files
+mount -o remount,rw /cache 2>/dev/null
+mount -o rw,remount /cache 2>/dev/null
+# > Logs should go in this file
+LOG=$CACHELOC/$ID.log
+oldLOG=$CACHELOC/$ID-old.log
+# > Verbose output goes here
+VERLOG=$CACHELOC/$ID-verbose.log
+oldVERLOG=$CACHELOC/$ID-verbose-old.log
+
+# Start Logging verbosely
+mv -f $VERLOG $oldVERLOG 2>/dev/null; mv -f $LOG $oldLOG 2>/dev/null
+set -x 2>$VERLOG
+
+# Main
+# > You can start your MOD here.
+# > You can add functions, variables & etc.
+# > Rather than editing the default vars above.
+
+backup(){
+  file=$1
+  [ $file ] || file=/sdcard/settings-backup.txt
+  for i in global secure system; do
+    bakSettings=$(settings list $i | sed "s|^|$i |" | sed "s|=| \"|1" | sed "s|$|\"|")
+    echo "$bakSettings" >>$file
+  done
+}
+
+help_me(){
+  cat << EOF
+$MODTITLE $VER($REL)
+by $AUTHOR
+$AUTHOR is not responsible for any damage caused by the use of this module
+
+Usage: $_name
+   or: $_name [options]...
+
+Options:
+    -m [setting] [value]             modify setting without terminal GUI
+    -g [arg]                         get a range of settings and their 
+                                     values matching [arg]
+    -l [system|secure|global]        list all settings for a namespace
+    -h                               show this message
+EOF
+exit
+}
+
+list_settings(){
+  [ "$noGUI" ] && $(settings list $1 && exit $1)
+  for i in $namespace; do
+    echo "====== $i ======"
+    arg=$(settings list $i)
+    echo "$arg"
+  done
+}
+
+reset_setting_GUI(){
+  clear
+  echo " ===== reset Settings ====="
+  echo ""
+  echo " Enter a setting value to reset it to default."
+  echo " Make sure to enter the full string or it may \n match multiple values."
+  echo " Settings can only be set one at a time as some \n settings cause the device to hot reboot."
+  echo ""
+  echo " x - ${Bl}Back to menu${N}"
+  echo " 0 - ${Bl}Exit${N}"
+  echo ""
+  echo -n "[setting?]: "
+  read choice
+  case "$choice" in
+    x) menu;;
+    0) exit;;
+    *) setting=$(grep "$choice \"" $MODDIR/settings.bak)
+       settings put $choice;;
+  esac
+}
+
+get_setting(){
+  for i in $namespace; do
+    echo "====== $i ======"
+    arg=$(settings list $i | grep "$1" )
+    echo "$arg"
+  done
+  [ "$noGUI" ] && exit $?
+  [ "$goBackGetGUI" ] && get_setting_GUI
+}
+
+get_setting_GUI(){
+  echo " ===== Find Settings ====="
+  echo ""
+  echo " Enter a search term and find matching settings"
+  echo ""
+  echo ""
+  echo " x - ${Bl}Back to ${Type}Namespace settings${N}"
+  echo " 0 - ${Bl}Exit${N}"
+  echo ""
+  echo -n "[Search?]: "
+  read choice
+  case "$choice" in
+    x) menu_namespace $Type;;
+    0) exit;;
+    *) goBackGetGUI=true
+       get_setting $choice;;
+  esac
+}
+
+modify_setting(){
+  for i in $namespace; do
+    currNSpace=$i
+    toChange=$(settings list $i | grep "$1" | sed 's/=.*//')
+    [ $toChange ] && break
+  done
+  settings put $currNSpace $toChange $2
+  [ "$noGUI" ] && exit $?
+  [ "$goBackModGUI" ] && modify_setting_GUI
+}
+
+modify_setting_GUI(){
+  echo " ===== Modify Settings ====="
+  echo ""
+  echo " Enter a setting then value"
+  echo " E.g. navigation_bar_visible 0"
+  echo ""
+  echo " x - ${Bl}Back to ${Type}Namespace settings${N}"
+  echo " 0 - ${Bl}Exit${N}"
+  echo ""
+  echo -n "[Search?]: "
+  read choice
+  case "$choice" in
+    x) menu_namespace $Type;;
+    0) exit;;
+    *) goBackModGUI=true
+       choice=($choice)
+       modify_setting ${choice[0]} ${choice[1]};;
+  esac
+}
+
+menu_namespace(){
+  case "$1" in
+    system|System) namespace=$1
+                   Type=System;;
+    secure|Secure) namespace=$1
+                   Type=Secure;;
+    global|Global) namespace=$1
+                   Type=Global;;
+    all|All) Type=All;;
+  esac
+  echo " ===== ${Type}Namespace Settings ====="
+  echo ""
+  echo " 1 - ${W}List all settings${N}"
+  echo " 2 - ${W}Find specific settings${N}"
+  echo " 3 - ${W}Modify settings${N}"
+  echo " x - ${Bl}Back to Menu${N}"
+  echo " 0 - ${Bl}Exit${N}"
+  echo ""
+  echo -n "[CHOICE]: "
+  read choice
+  case "$choice" in
+    1) list_settings
+       menu_namespace;;
+    2) clear && get_setting_GUI;;
+    3) clear && modify_setting_GUI;;
+    x) menu;;
+    0) exit;;
+  esac
+}
+
+menu(){
+  mod_head
+  echo ""
+  echo " 1 - ${W}System settings${N}"
+  echo " 2 - ${W}Secure settings${N}"
+  echo " 3 - ${W}Global settings${N}"
+  echo " 4 - ${W}All settings${N}"
+  echo " r - ${W}Reset/Backup setting(s) WIP${N}"
+  echo " d - ${C}Donate${N}"
+  echo " 0 - ${Bl}Exit${N}"
+  echo ""
+  echo -n "[CHOICE]: "
+  read choice
+  case "$choice" in
+    1)  clear && menu_namespace system;;
+    2)  clear && menu_namespace secure;;
+    3)  clear && menu_namespace global;;
+    4)  clear && menu_namespace all;;
+    r|R) reset_setting_GUI;;
+    d|D)  am start https://paypal.me/skittles2398 >/dev/null;;
+    logs)  upload_logs;;
+    0)  exit;;
+    *)  abort Invalid;;
+  esac
+}
+
+noGUI=
+namespace="
+system
+secure
+global
+"
+
+[ ! -f $MODDIR/settings.bak ] && backup $MODDIR/settings.bak
+
+case "$1" in
+  -m) shift
+    [ "$1" ] && { noGUI=true; modify_setting $1 $2; } || abort "Invalid setting/option!";;
+  -g) shift
+    [ "$1" ] && { noGUI=true; get_setting $1; } || abort "Invalid setting/option!";;
+  -l) shift
+    noGUI=true
+    [ ! "$1" ] && abort "$(help_me)"
+    if [ "$1" == "system" ]; then
+      list_settings system 2>>$LOG
+    elif [ "$1" == "secure" ]; then
+      list_settings secure 2>>$LOG
+    elif [ "$1" == "global" ]; then
+      list_settings global 2>>$LOG
+    else
+      abort "$(help_me)"
+    fi
+	exit;;
+  -h|--help) help_me;;
+esac
+
+menu
+exit $?

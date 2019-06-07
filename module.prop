@@ -1,0 +1,6 @@
+id=hidden_settings
+name=HiddenSettings
+version=v0.0.1
+versionCode=001
+author=Skittles9823
+description=A graphical interface to modify settings via terminal.
