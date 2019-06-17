@@ -95,7 +95,7 @@ reset_setting_GUI(){
     x) menu;;
     0) exit;;
     *) setting=$(grep "$choice \"" $MODDIR/settings.bak)
-       settings put $choice;;
+       settings put $setting;;
   esac
 }
 
