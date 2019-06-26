@@ -54,7 +54,6 @@ help_me(){
   cat << EOF
 $MODTITLE $VER($REL)
 by $AUTHOR
-$AUTHOR is not responsible for any damage caused by the use of this module
 
 Usage: $_name
    or: $_name [options]...
@@ -94,8 +93,9 @@ reset_setting_GUI(){
   case "$choice" in
     x) menu;;
     0) exit;;
-    *) setting=$(grep "$choice \"" $MODDIR/settings.bak)
-       settings put $setting;;
+    *) setting=$(grep "$choice \"" $MODDIR/settings.bak | sed "s/ \".*//")
+       settingval=$(grep "$choice \"" $MODDIR/settings.bak | sed "s/.* \"//" | sed "s/\"//")
+       settings put $setting $settingval;;
   esac
 }
 
@@ -203,15 +203,15 @@ menu(){
   echo -n "[CHOICE]: "
   read choice
   case "$choice" in
-    1)  clear && menu_namespace system;;
-    2)  clear && menu_namespace secure;;
-    3)  clear && menu_namespace global;;
-    4)  clear && menu_namespace all;;
+    1) clear && menu_namespace system;;
+    2) clear && menu_namespace secure;;
+    3) clear && menu_namespace global;;
+    4) clear && menu_namespace all;;
     r|R) reset_setting_GUI;;
-    d|D)  am start https://paypal.me/skittles2398 >/dev/null;;
-    logs)  upload_logs;;
-    0)  exit;;
-    *)  abort Invalid;;
+    d|D) am start https://paypal.me/skittles2398 >/dev/null;;
+    logs) upload_logs;;
+    0) exit;;
+    *) abort Invalid;;
   esac
 }
 
