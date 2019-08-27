@@ -45,7 +45,7 @@ backup(){
   file=$1
   [ $file ] || file=/sdcard/settings-backup.txt
   for i in global secure system; do
-    bakSettings=$(settings list $i | sed "s|^|$i |" | sed "s|=| \"|1" | sed "s|$|\"|")
+    bakSettings=$(settings list $i | sed -e "s|^|$i |; s|=| \"|1; s|$|\"|")
     echo "$bakSettings" >>$file
   done
 }
@@ -60,7 +60,7 @@ Usage: $_name
 
 Options:
     -m [setting] [value]             modify setting without terminal GUI
-    -g [arg]                         get a range of settings and their 
+    -g [arg]                         get a range of settings and their
                                      values matching [arg]
     -l [system|secure|global]        list all settings for a namespace
     -h                               show this message
@@ -93,8 +93,8 @@ reset_setting_GUI(){
   case "$choice" in
     x) menu;;
     0) exit;;
-    *) setting=$(grep "$choice \"" $MODDIR/settings.bak | sed "s/ \".*//")
-       settingval=$(grep "$choice \"" $MODDIR/settings.bak | sed "s/.* \"//" | sed "s/\"//")
+    *) setting=$(grep "$choice \"" $MODDIR/settings.bak | sed "s| \".*||")
+       settingval=$(grep "$choice \"" $MODDIR/settings.bak | sed -e "s|.* \"||; s|\"||")
        settings put $setting $settingval;;
   esac
 }
@@ -131,7 +131,7 @@ get_setting_GUI(){
 modify_setting(){
   for i in $namespace; do
     currNSpace=$i
-    toChange=$(settings list $i | grep "$1" | sed 's/=.*//')
+    toChange=$(settings list $i | grep "$1" | sed 's|=.*||')
     [ $toChange ] && break
   done
   settings put $currNSpace $toChange $2

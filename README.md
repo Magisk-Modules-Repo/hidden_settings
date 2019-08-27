@@ -22,6 +22,7 @@ I (Skittles9823) will not be responsible for ANY damage caused to anyone's devic
 ## Changelog:
 ### v0.0.2
  - fix resetting settings
+ - optimise sed statements and switch to more readable delimiter
 
 ### v0.0.1
  - initial version
