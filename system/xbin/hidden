@@ -42,11 +42,9 @@ set -x 2>$VERLOG
 # > Rather than editing the default vars above.
 
 backup(){
-  file=$1
-  [ $file ] || file=/sdcard/settings-backup.txt
+  touch $MODDIR/settings.bak
   for i in global secure system; do
-    bakSettings=$(settings list $i | sed -e "s|^|$i |; s|=| \"|1; s|$|\"|")
-    echo "$bakSettings" >>$file
+    settings list $i | sed "s|=| |" | awk -v i=$i '{ print i" "$1" ""\""$2"\"" }' >> $MODDIR/settings.bak
   done
 }
 
@@ -93,9 +91,9 @@ reset_setting_GUI(){
   case "$choice" in
     x) menu;;
     0) exit;;
-    *) setting=$(grep "$choice \"" $MODDIR/settings.bak | sed "s| \".*||")
-       settingval=$(grep "$choice \"" $MODDIR/settings.bak | sed -e "s|.* \"||; s|\"||")
-       settings put $setting $settingval;;
+    *) setting=$(grep "$choice" $MODDIR/settings.bak | awk '{ print $1 " " $2 }')
+       arg=$(grep "$choice" $MODDIR/settings.bak | awk '{ print $3 }')
+       settings put "$setting" "$arg";;
   esac
 }
 
@@ -134,7 +132,7 @@ modify_setting(){
     toChange=$(settings list $i | grep "$1" | sed 's|=.*||')
     [ $toChange ] && break
   done
-  settings put $currNSpace $toChange $2
+  settings put "$currNSpace" "$toChange" "$2"
   [ "$noGUI" ] && exit $?
   [ "$goBackModGUI" ] && modify_setting_GUI
 }
@@ -149,13 +147,13 @@ modify_setting_GUI(){
   echo " 0 - ${Bl}Exit${N}"
   echo ""
   echo -n "[Search?]: "
-  read choice
+  read choice arg
   case "$choice" in
     x) menu_namespace $Type;;
     0) exit;;
     *) goBackModGUI=true
        choice=($choice)
-       modify_setting ${choice[0]} ${choice[1]};;
+       modify_setting $choice $arg;;
   esac
 }
 
@@ -190,7 +188,7 @@ menu_namespace(){
 }
 
 menu(){
-  mod_head
+  #mod_head
   echo ""
   echo " 1 - ${W}System settings${N}"
   echo " 2 - ${W}Secure settings${N}"
@@ -222,7 +220,7 @@ secure
 global
 "
 
-[ ! -f $MODDIR/settings.bak ] && backup $MODDIR/settings.bak
+[ ! -f $MODDIR/settings.bak ] && backup
 
 case "$1" in
   -m) shift
