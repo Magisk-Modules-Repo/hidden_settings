@@ -159,7 +159,6 @@ modify_setting_GUI(){
 }
 
 menu_namespace(){
-  clear
   case "$1" in
     system|System) namespace=$1
                    Type=System;;
