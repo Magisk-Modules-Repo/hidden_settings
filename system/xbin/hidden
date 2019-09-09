@@ -138,6 +138,7 @@ modify_setting(){
 }
 
 modify_setting_GUI(){
+  clear
   echo " ===== Modify Settings ====="
   echo ""
   echo " Enter a setting then value"
@@ -158,6 +159,7 @@ modify_setting_GUI(){
 }
 
 menu_namespace(){
+  clear
   case "$1" in
     system|System) namespace=$1
                    Type=System;;
@@ -188,7 +190,7 @@ menu_namespace(){
 }
 
 menu(){
-  #mod_head
+  mod_head
   echo ""
   echo " 1 - ${W}System settings${N}"
   echo " 2 - ${W}Secure settings${N}"
