@@ -20,6 +20,9 @@ I (Skittles9823) will not be responsible for ANY damage caused to anyone's devic
 - [Magisk Module Template](https://github.com/topjohnwu/magisk-module-template) by [topjohnwu](https://forum.xda-developers.com/member.php?u=4470081)
 
 ## Changelog:
+### v0.0.4
+- update to latest Magisk module template
+
 ### v0.0.3
 - remove a clear that made it impossible to view the settings dump for a whole namespace
 
